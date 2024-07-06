@@ -1,0 +1,105 @@
+import math
+
+# Constants for players
+HUMAN = -1
+AI = 1
+EMPTY = 0
+
+def print_board(board):
+    for row in board:
+        print(" | ".join(map(str, row)))
+        print("---------")
+
+def check_winner(board):
+    # Check rows, columns, and diagonals
+    lines = board + list(zip(*board)) + [(board[0][0], board[1][1], board[2][2]), (board[0][2], board[1][1], board[2][0])]
+    for line in lines:
+        if all(cell == line[0] and cell != EMPTY for cell in line):
+            return line[0]
+    return None
+
+def get_empty_cells(board):
+    return [(i, j) for i in range(3) for j in range(3) if board[i][j] == EMPTY]
+
+def minimax(board, depth, maximizing_player, alpha, beta):
+    winner = check_winner(board)
+    if winner == AI:
+        return 1
+    elif winner == HUMAN:
+        return -1
+    elif len(get_empty_cells(board)) == 0:
+        return 0
+
+    if maximizing_player:
+        max_eval = -math.inf
+        for cell in get_empty_cells(board):
+            board[cell[0]][cell[1]] = AI
+            eval = minimax(board, depth + 1, False, alpha, beta)
+            board[cell[0]][cell[1]] = EMPTY
+            max_eval = max(max_eval, eval)
+            alpha = max(alpha, eval)
+            if beta <= alpha:
+                break
+        return max_eval
+    else:
+        min_eval = math.inf
+        for cell in get_empty_cells(board):
+            board[cell[0]][cell[1]] = HUMAN
+            eval = minimax(board, depth + 1, True, alpha, beta)
+            board[cell[0]][cell[1]] = EMPTY
+            min_eval = min(min_eval, eval)
+            beta = min(beta, eval)
+            if beta <= alpha:
+                break
+        return min_eval
+
+def get_best_move(board):
+    best_move = None
+    best_eval = -math.inf
+    alpha = -math.inf
+    beta = math.inf
+    for cell in get_empty_cells(board):
+        board[cell[0]][cell[1]] = AI
+        eval = minimax(board, 0, False, alpha, beta)
+        board[cell[0]][cell[1]] = EMPTY
+        if eval > best_eval:
+            best_eval = eval
+            best_move = cell
+            alpha = eval
+    return best_move
+
+def main():
+    board = [[EMPTY, EMPTY, EMPTY],
+             [EMPTY, EMPTY, EMPTY],
+             [EMPTY, EMPTY, EMPTY]]
+
+    current_player = HUMAN
+
+    while len(get_empty_cells(board)) > 0 and check_winner(board) is None:
+        print_board(board)
+
+        if current_player == HUMAN:
+            row = int(input("Enter row (0, 1, 2): "))
+            col = int(input("Enter column (0, 1, 2): "))
+            if board[row][col] == EMPTY:
+                board[row][col] = HUMAN
+                current_player = AI
+            else:
+                print("Cell occupied. Try again.")
+                continue
+        else:
+            move = get_best_move(board)
+            board[move[0]][move[1]] = AI
+            current_player = HUMAN
+
+    print_board(board)
+    winner = check_winner(board)
+    if winner == HUMAN:
+        print("You win!")
+    elif winner == AI:
+        print("AI wins!")
+    else:
+        print("It's a draw!")
+
+if __name__ == "__main__":
+    main()
